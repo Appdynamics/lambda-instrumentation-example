@@ -47,15 +47,16 @@ public class FrontEndLambdaFunctionHandler implements RequestHandler<WebFrontEnd
         }        
 
         // Build the AppD configuration. Components are assumed to be in Lambda environment variables.
+        // We are doing manual tracer setup. See the docs at https://docs.appdynamics.com/display/PRO45/Instrument+Your+Function+Code for
+        // requirements for auto tracer setup. 
         AppDynamics.Config.Builder configBuilder = new AppDynamics.Config.Builder();
         configBuilder.accountName(System.getenv("ACCOUNT_NAME")).applicationName(System.getenv("APPLICATION_NAME"))
-                .tierName(System.getenv("TIER_NAME")).controllerHost(System.getenv("CONTROLLER_HOST"))
-                .controllerPort(Integer.parseInt(System.getenv("CONTROLLER_PORT"))).defaultBtName(bt_name)
-                .serverlessApiKey(System.getenv("ENV_SERVERLESS_API_KEY")).lambdaContext(context);
+					.tierName(System.getenv("TIER_NAME")).controllerHost(System.getenv("CONTROLLER_HOST"))
+					.controllerPort(Integer.parseInt(System.getenv("CONTROLLER_PORT"))).defaultBtName(bt_name)
+					.controllerAccessKey(System.getenv("ACCOUNT_ACCESS_KEY")).lambdaContext(context);
 
         tracer = AppDynamics.getTracer(configBuilder.build());        
 
-        // Grabbing the singularity headers (if existing)
         if (input.getSingularity() != null) {
             correlationHeader = input.getSingularity().toString();
         } else {
@@ -65,9 +66,8 @@ public class FrontEndLambdaFunctionHandler implements RequestHandler<WebFrontEnd
             }
         }
 
-        // Starting the instrumentation
         txn = tracer.createTransaction(correlationHeader);
-        txn.start();              
+        txn.start();             
 
         // Put your Lambda implementation here.
         
@@ -78,7 +78,7 @@ public class FrontEndLambdaFunctionHandler implements RequestHandler<WebFrontEnd
         resp = WebFrontEndResponse.Builder.newInstance().withStatusCode(200).withIsBase64Encoded(false)
                 .withHeader("Content-Type", "application/json").withBody("{ \"status\" :\"OK\" }").create();
 
-        // Ending the transaction.
+        // Ending the transaction manually because tracer setup was done manually.
         if (txn != null) {
             txn.stop();
         }

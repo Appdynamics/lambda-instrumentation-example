@@ -89,7 +89,7 @@
 	<dependency>
 		<groupId>com.appdynamics.serverless.tracers.aws.api</groupId>
 		<artifactId>appdynamics-aws-lambda-java-tracer</artifactId>
-		<version>4.5.0</version>
+		<version>1.0.1</version>
 	</dependency>
   </dependencies>
 </project> 

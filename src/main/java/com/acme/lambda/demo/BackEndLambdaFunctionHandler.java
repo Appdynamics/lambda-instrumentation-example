@@ -60,26 +60,25 @@ public class BackEndLambdaFunctionHandler implements RequestStreamHandler {
 			bt_name = lambda_body.get("bt_name");
 		}
 
-		// If our payload contains a correlation header, configure / start insturmentation.
+		// We are using manual tracer setup here. See the docs at https://docs.appdynamics.com/display/PRO45/Instrument+Your+Function+Code for auto tracer setup.
+		AppDynamics.Config.Builder configBuilder = new AppDynamics.Config.Builder();
+		configBuilder.accountName(System.getenv("ACCOUNT_NAME")).applicationName(System.getenv("APPLICATION_NAME"))
+				.tierName(System.getenv("TIER_NAME")).controllerHost(System.getenv("CONTROLLER_HOST"))
+				.controllerPort(Integer.parseInt(System.getenv("CONTROLLER_PORT"))).defaultBtName(bt_name)
+				.controllerAccessKey(System.getenv("ACCOUNT_ACCESS_KEY")).lambdaContext(context);
+
+		tracer = AppDynamics.getTracer(configBuilder.build());
+
 		if (lambda_body.containsKey(Tracer.APPDYNAMICS_TRANSACTION_CORRELATION_HEADER_KEY)) {
-
-			// Build the AppD configuration. Components are assumed to be in Lambda environment variables.
-			AppDynamics.Config.Builder configBuilder = new AppDynamics.Config.Builder();
-			configBuilder.accountName(System.getenv("ACCOUNT_NAME")).applicationName(System.getenv("APPLICATION_NAME"))
-					.tierName(System.getenv("TIER_NAME")).controllerHost(System.getenv("CONTROLLER_HOST"))
-					.controllerPort(Integer.parseInt(System.getenv("CONTROLLER_PORT"))).defaultBtName(bt_name)
-					.serverlessApiKey(System.getenv("ENV_SERVERLESS_API_KEY")).lambdaContext(context);
-
-			tracer = AppDynamics.getTracer(configBuilder.build());
-
-			// Grab the correlation header and start instrumentation.
 			correlationHeader = lambda_body.get(Tracer.APPDYNAMICS_TRANSACTION_CORRELATION_HEADER_KEY);
-			txn = tracer.createTransaction(correlationHeader);
-			txn.start();
-		}	
+		}
 
-		// Lambda instrumentation goes here. In this example we're sleeping a random amount of time and returning a random GUID.
+		txn = tracer.createTransaction(correlationHeader);
+		txn.start();
+
+		// In this example we're sleeping a random amount of time and returning a random GUID.
 		// If there are any issues, the error is reported. Finally, the transaction is stopped.
+		// Because we're doing manual tracer setup, we have to specify when to report transaction errors.
 		try {
 			Random rnd2 = new Random();
 			int min_ms = 0;
