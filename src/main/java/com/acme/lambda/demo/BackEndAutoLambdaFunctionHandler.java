@@ -4,13 +4,14 @@ import java.util.HashMap;
 import java.io.*;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 import com.amazonaws.services.lambda.AWSLambda;
 import com.amazonaws.services.lambda.AWSLambdaClientBuilder;
 import com.amazonaws.services.lambda.model.InvokeRequest;
 
 import com.appdynamics.serverless.tracers.aws.api.AppDynamics;
+import com.appdynamics.serverless.tracers.aws.api.MonitoredRequestStreamHandler;
 import com.appdynamics.serverless.tracers.aws.api.Tracer;
 import com.appdynamics.serverless.tracers.aws.api.Transaction;
 import com.appdynamics.serverless.tracers.aws.api.ExitCall;
@@ -26,12 +27,12 @@ import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 
 /**
- * This class is an example for a Lambda function that is called internally.  
+ * This class is an example for a Lambda function that is called internally. This uses auto tracer setup for AppD.
  * 
  * The request / response data for this example is read from/written to an InputStream / OutputStream. It can also be strongly typed.
  * @author Wayne Brown
  */
-public class BackEndLambdaFunctionHandler implements RequestStreamHandler {
+public class BackEndAutoLambdaFunctionHandler extends MonitoredRequestStreamHandler {
 
 	Transaction txn = null;
 	Tracer tracer = null;
@@ -43,38 +44,11 @@ public class BackEndLambdaFunctionHandler implements RequestStreamHandler {
 	 * @param context The Lambda context
 	 * @throws IOException 
 	 */
-	public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {		
-		
-		String retval = "";		
-		String correlationHeader = "";
-		
-		String str = IOUtils.toString(inputStream, "UTF-8");
-		Gson gson = new GsonBuilder().create();
-		Type type = new TypeToken<HashMap<String, String>>() {
-		}.getType();
-		HashMap<String, String> lambda_body = gson.fromJson(str, type);
-
-		// Setting a default BT name if one does not come across as part of the payload.
-		String bt_name = "/";
-		if (lambda_body.containsKey("bt_name")) {
-			bt_name = lambda_body.get("bt_name");
-		}
-
-		// We are using manual tracer setup here. See the docs at https://docs.appdynamics.com/display/PRO45/Instrument+Your+Function+Code for auto tracer setup.
-		AppDynamics.Config.Builder configBuilder = new AppDynamics.Config.Builder();
-		configBuilder.accountName(System.getenv("ACCOUNT_NAME")).applicationName(System.getenv("APPLICATION_NAME"))
-				.tierName(System.getenv("TIER_NAME")).controllerHost(System.getenv("CONTROLLER_HOST"))
-				.controllerPort(Integer.parseInt(System.getenv("CONTROLLER_PORT"))).defaultBtName(bt_name)
-				.controllerAccessKey(System.getenv("ACCOUNT_ACCESS_KEY")).lambdaContext(context);
-
-		tracer = AppDynamics.getTracer(configBuilder.build());
-
-		if (lambda_body.containsKey(Tracer.APPDYNAMICS_TRANSACTION_CORRELATION_HEADER_KEY)) {
-			correlationHeader = lambda_body.get(Tracer.APPDYNAMICS_TRANSACTION_CORRELATION_HEADER_KEY);
-		}
-
-		txn = tracer.createTransaction(correlationHeader);
-		txn.start();
+    @Override
+	public void handleMonitoredRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {		
+				
+		String retval = "";
+		txn = getTransaction();
 
 		// In this example we're sleeping a random amount of time and returning a random GUID.
 		// If there are any issues, the error is reported. Finally, the transaction is stopped.
@@ -94,9 +68,6 @@ public class BackEndLambdaFunctionHandler implements RequestStreamHandler {
 			}
 		} finally {
 			retval = UUID.randomUUID().toString();
-			if (txn != null) {
-				txn.stop();
-			}
 		}		
 		outputStream.write(retval.getBytes(Charset.forName("UTF-8")));
 	}
