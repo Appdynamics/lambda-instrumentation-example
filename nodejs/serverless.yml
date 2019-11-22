@@ -1,0 +1,36 @@
+service: appd-js-lambda-hello-world
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  environment:
+    # replace these env variables with your controller info values
+    APPDYNAMICS_ACCOUNT_NAME: customer1
+    APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY: SJ5b2m7d1$354
+    APPDYNAMICS_APPLICATION_NAME: node-js-hello-world
+    APPDYNAMICS_CONTROLLER_HOST: ec2-35-165-169-148.us-west-2.compute.amazonaws.com
+    APPDYNAMICS_CONTROLLER_PORT: 8080
+    APPDYNAMICS_LOG_LEVEL: DEBUG
+    APPDYNAMICS_SERVERLESS_API_ENDPOINT: https://pdx-sls-agent-api.saas.appd-test.com
+
+package:
+  exclude:
+    - "*.test.js"
+
+functions:
+  greet:
+    handler: handler.greet
+    events:
+      - http:
+          path: api/greet
+          method: get
+          integration: lambda
+          cors: true
+  greetAsync:
+    handler: handler.greetAsync
+    events:
+      - http:
+          path: api/greetAsync
+          method: get
+          integration: lambda
+          cors: true

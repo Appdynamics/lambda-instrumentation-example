@@ -1,7 +1,6 @@
 # lambda-instrumentation-example
-Example AWS Lambda instrumentation project written in Java. Does not include Lambda deployment steps. 
 
-Documentation still in progress
+Example AWS Lambda instrumentation project with versions written in Java and NodeJS. Does not include Lambda deployment steps.
 
 ## Authors
 
