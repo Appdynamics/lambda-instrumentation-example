@@ -1,36 +1,39 @@
-service: appd-js-lambda-hello-world
+service: appd-lambda-nodejs
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs10.x
   environment:
     # replace these env variables with your controller info values
-    APPDYNAMICS_ACCOUNT_NAME: customer1
-    APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY: SJ5b2m7d1$354
-    APPDYNAMICS_APPLICATION_NAME: node-js-hello-world
-    APPDYNAMICS_CONTROLLER_HOST: ec2-35-165-169-148.us-west-2.compute.amazonaws.com
-    APPDYNAMICS_CONTROLLER_PORT: 8080
+    APPDYNAMICS_ACCOUNT_NAME: 
+    APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY: 
+    APPDYNAMICS_APPLICATION_NAME: 
+    APPDYNAMICS_CONTROLLER_HOST: 
+    APPDYNAMICS_CONTROLLER_PORT: 
     APPDYNAMICS_LOG_LEVEL: DEBUG
-    APPDYNAMICS_SERVERLESS_API_ENDPOINT: https://pdx-sls-agent-api.saas.appd-test.com
+    APPDYNAMICS_SERVERLESS_API_ENDPOINT: 
 
 package:
   exclude:
     - "*.test.js"
 
 functions:
-  greet:
-    handler: handler.greet
+  lambda-1:
+    handler: handler.doFunctionAsync
+    description: Sample Lambda function in NodeJS for AppD Lambda Instrumentation
+    memorySize: 256
+    timeout: 30
+    environment:
+      APPDYNAMICS_TIER_NAME: ${self:service}-lambda-1
     events:
       - http:
-          path: api/greet
-          method: get
-          integration: lambda
-          cors: true
-  greetAsync:
-    handler: handler.greetAsync
-    events:
-      - http:
-          path: api/greetAsync
-          method: get
-          integration: lambda
-          cors: true
+          path: /{proxy+}
+          method: any    
+
+  lambda-2:
+    handler: handler.doFunctionAsync2
+    description: Second sample Lambda function
+    memorySize: 256
+    timeout: 30
+    environment:
+      APPDYNAMICS_TIER_NAME: ${self:service}-lambda-2

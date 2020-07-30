@@ -1,0 +1,68 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+
+service: appd-lambda-python
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: dev
+  region: us-west-2
+  environment:
+    AWS_REGION_STR: ${opt:region, self:provider.region}
+    APPDYNAMICS_ACCOUNT_NAME: ""
+    APPDYNAMICS_AGENT_ACCOUNT_ACCESS_KEY: ""
+    APPDYNAMICS_APPLICATION_NAME: ""
+    APPDYNAMICS_CONTROLLER_HOST: ""
+    APPDYNAMICS_SERVERLESS_API_ENDPOINT: ""
+    APPDYNAMICS_CONTROLLER_PORT: 443    
+    APPDYNAMICS_LOG_LEVEL: "DEBUG"
+
+# you can overwrite defaults here
+#  stage: dev
+#  region: us-east-1
+
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction            
+      Resource: "*"
+
+functions:
+  lambda-1:
+    handler: handler.lambda_handler
+    description: Sample Lambda function in Python for AppD Lambda Instrumentation
+    memorySize: 256
+    timeout: 30
+    environment:
+      APPDYNAMICS_TIER_NAME: ${self:service}-lambda-1
+    events:
+      - http:
+          path: /{proxy+}
+          method: any 
+      
+  lambda-2:
+    handler: handler2.lambda_handler
+    description: Sample Lambda function in Python for AppD Lambda Instrumentation
+    memorySize: 256
+    timeout: 30
+    environment:
+      APPDYNAMICS_TIER_NAME: ${self:service}-lambda-2
