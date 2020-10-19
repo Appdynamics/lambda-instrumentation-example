@@ -8,7 +8,6 @@ from random import randint
 
 lambda_client = boto3.client('lambda')
 
-@appdynamics.tracer
 def lambda_handler(event, context):  
 
     if event['path'] == "/employee/random":
@@ -27,6 +26,8 @@ def lambda_handler(event, context):
                 "body" : None
             }
         elif randint(1, 100) == 74:             # Throw a random error in the transaction
+
+            # We're reporting an error that is not considered by the runtime to be an error.
             appdynamics.report_error(error_name="Unknown", error_message="Unknown Error in Lambda Handler")
             retval = {
                 "statusCode" : 500,

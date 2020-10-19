@@ -27,19 +27,22 @@ except pymysql.MySQLError as e:
 
 logger.info("SUCCESS: Connection to MySQL instance succeeded")
 
-@appdynamics.tracer
 def lambda_handler(event, context):    
     query = 'select key_field, field_2, some_other_field from Some_Table order by RAND() limit 1'
 
     retval = {}
 
     with conn.cursor() as cursor:
+
+        # We're making an exit call that is not auto-detected, so manual exit call instrumentation is still required.
         with appdynamics.ExitCallContextManager(exit_point_type="DB", exit_point_sub_type="DB", identifying_properties={"VENDOR": "MYSQL", "HOST" : rds_host, "PORT" : "3306", "DATABASE" : db_name}) as ec:
             cursor.execute(query)
             retval = cursor.fetchone()
 
             if randint(1, 100) == 42:       # Randomly return nothing (which is an error)
                 retval = None
+
+                # We're reporting an error in the exit call that is not considered by the runtime to be an error.
                 ec.report_exit_call_error(error_name="DBError", error_message="No records returned")
 
             if randint(1, 100) >= 95:       # Also randomly make things take longer
