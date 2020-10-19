@@ -12,6 +12,7 @@ provider:
     APPDYNAMICS_CONTROLLER_PORT: 
     APPDYNAMICS_LOG_LEVEL: DEBUG
     APPDYNAMICS_SERVERLESS_API_ENDPOINT: 
+    AWS_LAMBDA_EXEC_WRAPPER: "/opt/appdynamics-extension-script"
 
 package:
   exclude:
@@ -23,6 +24,8 @@ functions:
     description: Sample Lambda function in NodeJS for AppD Lambda Instrumentation
     memorySize: 256
     timeout: 30
+    layers:
+      - arn:aws:lambda:${opt:region, self:provider.region}:716333212585:layer:appdynamics-lambda-extension:9
     environment:
       APPDYNAMICS_TIER_NAME: ${self:service}-lambda-1
     events:
@@ -34,6 +37,8 @@ functions:
     handler: handler.doFunctionAsync2
     description: Second sample Lambda function
     memorySize: 256
+    layers:
+      - arn:aws:lambda:${opt:region, self:provider.region}:716333212585:layer:appdynamics-lambda-extension:9
     timeout: 30
     environment:
       APPDYNAMICS_TIER_NAME: ${self:service}-lambda-2

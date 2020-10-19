@@ -1,9 +1,6 @@
-// const secret_mgr = require('./secrets-manager.js');
 // TODO: Add in call to require AppDynamics Tracer
 const tracer = require('appdynamics-lambda-tracer');
 
-// TODO: init tracer
-tracer.init();
 
 const AWS = require('aws-sdk');
 
@@ -52,7 +49,7 @@ module.exports.doFunctionAsync = async (event, context) => {
             response.statusCode = 201;
 
         } catch (e) {
-            // TODO: Add in error reporting for exit call
+            // Example of reporting an exit call error
             if (tracer != null && exitCall != null) {
                 tracer.reportExitCallError(exitCall, 'DynamoDB Error', 'Error in making the DynamoDB query for submitting person');
             }
@@ -66,7 +63,7 @@ module.exports.doFunctionAsync = async (event, context) => {
 
         }
 
-        // TODO: End exit call
+        // Example of stopping the exit call.
         if (tracer != null && exitCall != null) {
             tracer.stopExitCall(exitCall);
         }
@@ -103,10 +100,22 @@ module.exports.doFunctionAsync = async (event, context) => {
         var ms = _.random(50, 500);
         await doStuff(ms);
 
-        response.body = JSON.stringify({
-            status: 'Hello AppDynamics Lambda Monitoring - Async JS handler from ' + event.path + ". ",
-            data: context
-        });
+        // Generating a random error 5% of the time to show custom error reporting.
+        if (_.random(10, 100) % 20 == 0) {
+
+            tracer.reportTransactionError(new Error('Unknown error from ' + event.path));
+
+            response.statusCode = 500;
+            response.body = JSON.stringify({
+                status: "Unknown error from " + event.path,
+                data: context
+            });
+        } else {
+            response.body = JSON.stringify({
+                status: 'Hello AppDynamics Lambda Monitoring - Async JS handler from ' + event.path + ". ",
+                data: context
+            });
+        }        
     }
 
 
@@ -118,7 +127,7 @@ module.exports.doFunctionAsync2 = async (event, context) => {
 
     var id_results, ids, id;
 
-    // TODO: Add exit call to DynamoDB
+    // Example of a custom exit call.
     var exitCall = null;
     if (tracer != null) {
         exitCall = tracer.startExitCall({
@@ -141,7 +150,7 @@ module.exports.doFunctionAsync2 = async (event, context) => {
         try {
             var person = await getPerson(id);
 
-            // TODO: End exit call
+            // Example of stopping the exit call.
             if (tracer != null && exitCall != null) {
                 tracer.stopExitCall(exitCall);
             }
@@ -149,24 +158,20 @@ module.exports.doFunctionAsync2 = async (event, context) => {
             context.succeed(person);
         } catch (e2) {
 
-            // TODO: Report exit call error
+            // Example of reporting an exit call error followed by stopping the exit call.
             if (tracer != null && exitCall != null) {
                 tracer.reportExitCallError(exitCall, 'DynamoDB Error', 'Error in making the DynamoDB query for retrieving person');
-            }
-
-            // TODO: End exit call
-            if (tracer != null && exitCall != null) {
                 tracer.stopExitCall(exitCall);
             }
 
             context.fail(e2);
         }
     } catch (e) {
-        // TODO: Report exit call error
-        tracer.reportExitCallError(exitCall, 'DynamoDB Error', 'Error in making the DynamoDB query for retrieving person set');
-
-        // TODO: End exit call
-        tracer.stopExitCall(exitCall);
+        // Example of reporting an exit call error followed by stopping the exit call.
+        if (tracer != null && exitCall != null) {
+            tracer.reportExitCallError(exitCall, 'DynamoDB Error', 'Error in making the DynamoDB query for retrieving person set');        
+            tracer.stopExitCall(exitCall);
+        }        
 
         context.fail(e);
     }
@@ -211,5 +216,3 @@ const personInfo = () => {
 
     return retval;
 };
-
-tracer.mainModule(module);
